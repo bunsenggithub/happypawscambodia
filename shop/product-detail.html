@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/product-detail.css" />
+    <title></title>
+</head>
+
+<body>
+    <!-- ================= HEADER ================= -->
+    <header>
+        <div class="header-container">
+            <div class="logo">Happy Paws Cambodia</div>
+
+            <!-- 🔍 Search -->
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" placeholder="Search the store" />
+                    <button>
+                        <svg style="width: 15px; height: 15px" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 🛒 Cart -->
+            <div>
+                <div id="cartIcon">🛒 <span id="cartCount">0</span></div>
+                <div id="cartOverlay" class="cart-overlay"></div>
+                <div id="cartModal" class="cart-modal">
+                    <div class="cart-header">
+                        <h2>Your Cart</h2>
+                        <button id="closeCart" class="close-btn">✖</button>
+                    </div>
+                    <div id="cartItems" class="cart-items"></div>
+                    <div class="cart-footer">
+                        <p><b>Total:</b> $<span id="cartTotal">0.00</span></p>
+                        <button id="checkoutBtn" class="checkout-btn">Checkout</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🍔 Mobile Menu -->
+            <div class="hamburger" id="hamburger">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+
+        <!-- 🌐 Navigation -->
+        <nav>
+            <ul>
+                <li><a href="#">Dog</a></li>
+                <li><a href="#">Cat</a></li>
+                <li><a href="#">Small Pet</a></li>
+                <li><a href="#">Bird</a></li>
+                <li><a href="#">Aquatic</a></li>
+                <li><a href="#">+ Vet</a></li>
+                <li><a href="#">Top Brands</a></li>
+                <li><a href="#">Special Offers</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- ================= BREADCRUMB ================= -->
+    <nav class="breadcrumb" style="background-color: white;">
+        <a href="../homepage.html">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 9.75L12 3l9 6.75V21a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 21V9.75z" />
+            </svg>
+        </a>
+        <span class="separator">›</span>
+        <span>Dog</span>
+    </nav>
+
+    <!-- PRODUCT DETAIL -->
+    <main id="productDetail" class="product-detail">
+        <p>Loading product details...</p>
+    </main>
+
+    <!-- IMAGE POPUP MODAL -->
+    <div class="image-modal" id="imageModal">
+        <button class="close-modal" id="closeModal">✖</button>
+        <button class="modal-btn modal-prev" id="prevBtn">❮</button>
+        <img id="modalImage" src="" alt="Product image">
+        <button class="modal-btn modal-next" id="nextBtn">❯</button>
+    </div>
+
+    <!-- ====Section(4)================================================================================================== -->
+    <section class="recommend-section">
+        <div class="recommend-container">
+            <h2 class="recommend-title">Top recommendations</h2>
+
+            <div class="recommend-content">
+                <p class="recommend-empty">No recommendations found..</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="recommend-section">
+        <div class="recommend-container">
+            <h2 class="recommend-title">Recently viewed products</h2>
+
+            <div class="recommend-content">
+                <p class="recommend-empty">No recommendations found..</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-left">
+                <p class="footer-desc">
+                    Happy Paws Cambodia – your one-stop destination for pet food, toys, and care.
+                </p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2025 Happy Paws Cambodia. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- ================= SCRIPTS ================= -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { addToCart, updateCartCount } from "../js/cart.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDgplNJfWpHKu_pHIROonwE6zj-4zUSetA",
+            authDomain: "ecommerce-52a65.firebaseapp.com",
+            projectId: "ecommerce-52a65",
+            storageBucket: "ecommerce-52a65.appspot.com",
+            messagingSenderId: "510866427688",
+            appId: "1:510866427688:web:f730f3ffa83fd15a390a1d",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const productDetail = document.getElementById("productDetail");
+        const imageModal = document.getElementById("imageModal");
+        const modalImage = document.getElementById("modalImage");
+        const closeModal = document.getElementById("closeModal");
+        const nextBtn = document.getElementById("nextBtn");
+        const prevBtn = document.getElementById("prevBtn");
+        let images = [];
+        let currentIndex = 0;
+
+        // ✅ Get category + id from URL
+        const params = new URLSearchParams(window.location.search);
+        const category = params.get("category"); // Example: Dog, Cat, Bird, etc.
+        const id = params.get("id");
+
+        async function loadProduct() {
+            if (!id || !category) {
+                productDetail.innerHTML = "<p>❌ Invalid product ID or category.</p>";
+                return;
+            }
+
+            // ✅ Dynamic Firestore path by category
+            const ref = doc(db, "Food", category, "Items", id);
+            const snap = await getDoc(ref);
+            if (!snap.exists()) {
+                productDetail.innerHTML = "<p>❌ Product not found.</p>";
+                return;
+            }
+
+            const data = snap.data();
+            document.title = `${data.name || "Product"} | Happy Paws Cambodia`;
+
+            images = data.images || [];
+            const price = parseFloat(data.price) || 0;
+            const discount = parseFloat(data.discount) || 0;
+            const finalPrice = discount > 0 ? (price * (1 - discount / 100)).toFixed(2) : price.toFixed(2);
+
+            const thumbnailsHTML = images.map((img, i) =>
+                `<img src="${img}" class="${i === 0 ? 'active' : ''}" data-index="${i}" alt="thumb">`
+            ).join('');
+
+            productDetail.innerHTML = `
+            <div class="product-gallery">
+                <img src="${images[0] || ''}" class="main-image" id="mainImage" alt="${data.name}">
+                <div class="thumbnails">${thumbnailsHTML}</div>
+            </div>
+            <div class="product-info">
+                <h2>${data.name}</h2>
+                <div class="rating">⭐ ${data.rating || "4.5"} / 5</div>
+                <p class="price">
+                    ${discount > 0
+                    ? `<span class="old-price">$${price.toFixed(2)}</span>
+                   <span class="new-price">$${finalPrice}</span>
+                   <span class="discount-badge">-${discount}%</span>`
+                    : `<span class="new-price">$${price.toFixed(2)}</span>`}
+                </p>
+                <p class="desc"><b>Description:</b><br>${data.description || "No description available."}</p>
+                <p><strong>Views:</strong> ${(data.views || 0) + 1}</p>
+                <button class="add-to-cart" id="addToCartBtn">🛒 Add to Cart</button>
+                <div class="delivery-box">
+                    <p><b>Delivery:</b> Available in Phnom Penh within 2 days.</p>
+                    <p><b>Return policy:</b> 7 days easy return.</p>
+                </div>
+            </div>
+        `;
+
+            // Add to cart
+            document.getElementById("addToCartBtn").addEventListener("click", () => addToCart(data, id));
+
+            // Thumbnail interaction
+            const mainImage = document.getElementById("mainImage");
+            document.querySelectorAll(".thumbnails img").forEach(thumb => {
+                thumb.addEventListener("click", () => {
+                    document.querySelectorAll(".thumbnails img").forEach(i => i.classList.remove("active"));
+                    thumb.classList.add("active");
+                    currentIndex = parseInt(thumb.dataset.index);
+                    mainImage.src = images[currentIndex];
+                });
+            });
+
+            // Image modal
+            mainImage.addEventListener("click", () => openModal(currentIndex));
+        }
+
+        // Modal controls
+        function openModal(index) {
+            currentIndex = index;
+            modalImage.src = images[currentIndex];
+            imageModal.style.display = "flex";
+        }
+        function closeModalFn() { imageModal.style.display = "none"; }
+        function showNext() {
+            currentIndex = (currentIndex + 1) % images.length;
+            modalImage.src = images[currentIndex];
+        }
+        function showPrev() {
+            currentIndex = (currentIndex - 1 + images.length) % images.length;
+            modalImage.src = images[currentIndex];
+        }
+
+        closeModal.addEventListener("click", closeModalFn);
+        nextBtn.addEventListener("click", showNext);
+        prevBtn.addEventListener("click", showPrev);
+        imageModal.addEventListener("click", (e) => { if (e.target === imageModal) closeModalFn(); });
+
+        // Load on start
+        window.addEventListener("DOMContentLoaded", () => {
+            updateCartCount();
+            loadProduct();
+        });
+    </script>
+
+</body>
+
+</html>

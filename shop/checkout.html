@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../css/style.css">
+    <title>Checkout</title>
+</head>
+
+<body>
+    <!-- ✅ Checkout Section -->
+    <div id="checkout">
+        <h1>Checkout</h1>
+        <table id="cartTable">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Dis.</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody id="cartBody"></tbody>
+        </table>
+
+        <div id="summary" class="summary"></div>
+
+        <!-- Guest Info Form -->
+        <div class="guest-info">
+            <h2>Guest Information</h2>
+            <label for="guestName">Full Name</label>
+            <input type="text" id="guestName" placeholder="Enter your name" required />
+            <label for="guestEmail">Email</label>
+            <input type="email" id="guestEmail" placeholder="Enter your email" required />
+            <label for="guestPhone">Phone</label>
+            <input type="text" id="guestPhone" placeholder="Enter your phone number" required />
+            <label for="guestAddress">Address</label>
+            <input type="text" id="guestAddress" placeholder="Enter your address" required />
+        </div>
+
+        <!-- ✅ Simple Captcha -->
+        <div class="simple-captcha" style="
+      margin-top: 15px;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+    ">
+            <label id="captchaQuestion" for="captchaInput" style="font-weight: bold;"></label>
+            <input type="text" id="captchaInput" placeholder="Answer" required style="
+        width: 60px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      " />
+            <button id="refreshCaptcha" type="button" style="
+        background: #f0f0f0;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        padding: 4px 6px;
+      ">↻</button>
+        </div>
+
+        <!-- Place Order Button -->
+        <button id="placeOrderBtn" style="
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #4caf50;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    ">
+            <span class="btn-text">Place Order</span>
+            <span class="loader" style="
+        display: none;
+        border: 3px solid #fff;
+        border-top: 3px solid transparent;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+      "></span>
+        </button>
+    </div>
+
+    <!-- ✅ Receipt Section -->
+    <div id="receipt" style="
+    max-width: 650px;
+    margin: 30px auto;
+    background: #fff;
+    padding: 25px 30px;
+    border-radius: 16px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    display: none;
+  ">
+        <img class="logo"
+            src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgFXA-zqV8EMpNfBjPXXmEeUG2AwwHkzbElHkNVuTpf2NZlR0m-11QWK172PkLCUrAeEC_Y-QBM7-MYDIhxDRGHBNHNcVCwkCpc6pur7HaMv1fFvl4jApwKmN757BNZadVksXJzezVJqZ643nAOZEaXyFRaxJHreQuL1tcvXW3lyZw947Lxc6Ctca01ANxb/s1600/images.png"
+            alt="Logo" style="width: 65px; display: block; margin-bottom: 10px" />
+        <h5 style="margin: 0; color: #444; font-size: 17px; font-weight: 600">
+            ORDER CONFIRMATION
+        </h5>
+
+        <div class="receipt-info">
+            <p><strong>Order ID:</strong> <span id="rOrderId"></span></p>
+            <p><strong>Name:</strong> <span id="rName"></span></p>
+            <p><strong>Email:</strong> <span id="rEmail"></span></p>
+            <p><strong>Phone:</strong> <span id="rPhone"></span></p>
+            <p><strong>Address:</strong> <span id="rAddress"></span></p>
+        </div>
+
+        <h5 style="margin-top: 20px; color: #444; font-size: 17px; font-weight: 600">
+            Order Summary
+        </h5>
+        <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 14px;">
+            <thead>
+                <tr>
+                    <th style="border: 1px solid #e5e7eb; padding: 10px; text-align: center; background: #f9fafb;">
+                        Product</th>
+                    <th style="border: 1px solid #e5e7eb; padding: 10px; text-align: center; background: #f9fafb;">Qty
+                    </th>
+                    <th style="border: 1px solid #e5e7eb; padding: 10px; text-align: center; background: #f9fafb;">Price
+                    </th>
+                    <th style="border: 1px solid #e5e7eb; padding: 10px; text-align: center; background: #f9fafb;">Dis.
+                    </th>
+                    <th style="border: 1px solid #e5e7eb; padding: 10px; text-align: center; background: #f9fafb;">
+                        Subtotal</th>
+                </tr>
+            </thead>
+            <tbody id="rItems"></tbody>
+        </table>
+
+        <div class="receipt-summary" style="
+      margin-top: 20px;
+      border-top: 2px dashed #e5e7eb;
+      padding-top: 12px;
+      font-size: 15px;
+      color: #444;
+    ">
+            <div class="summary-row" style="display: flex; justify-content: space-between; margin: 6px 0">
+                <span>Discount</span>
+                <span id="rDiscount"></span>
+            </div>
+            <div class="summary-row" style="display: flex; justify-content: space-between; margin: 6px 0">
+                <span>Shipping Fee</span>
+                <span id="rShipping"></span>
+            </div>
+            <div class="summary-row total" style="
+        display: flex;
+        justify-content: space-between;
+        margin: 6px 0;
+        font-weight: 700;
+        font-size: 18px;
+        color: #111;
+        background: #f9fafb;
+        padding: 10px 12px;
+        border-radius: 8px;
+      ">
+                <span>Payout</span>
+                <span id="rTotal"></span>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            serverTimestamp,
+            doc,
+            getDoc,
+            setDoc,
+            updateDoc,
+            increment,
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDgplNJfWpHKu_pHIROonwE6zj-4zUSetA",
+            authDomain: "ecommerce-52a65.firebaseapp.com",
+            projectId: "ecommerce-52a65",
+            storageBucket: "ecommerce-52a65.appspot.com",
+            messagingSenderId: "510866427688",
+            appId: "1:510866427688:web:f730f3ffa83fd15a390a1d",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const cart = JSON.parse(localStorage.getItem("cart")) || [];
+        const cartBody = document.getElementById("cartBody");
+        const summary = document.getElementById("summary");
+        const placeOrderBtn = document.getElementById("placeOrderBtn");
+        const btnText = placeOrderBtn.querySelector(".btn-text");
+        const loader = placeOrderBtn.querySelector(".loader");
+        const captchaQuestion = document.getElementById("captchaQuestion");
+        const captchaInput = document.getElementById("captchaInput");
+
+        // 🧮 Keep one global totals object
+        let totals = { subtotal: 0, discount: 0, shipping: 0, total: 0 };
+
+        function calcShipping(afterDiscount) {
+            if (afterDiscount < 50) return 2.0;
+            if (afterDiscount < 100) return 2.5;
+            return 0.0;
+        }
+
+        function renderCheckout() {
+            if (cart.length === 0) {
+                document.getElementById("checkout").innerHTML =
+                    '<p class="empty">Your cart is empty.</p>';
+                return;
+            }
+
+            cartBody.innerHTML = "";
+            let subtotal = 0;
+            let totalDiscount = 0;
+
+            cart.forEach((item) => {
+                const price = Number(item.price) || 0;
+                const discount = Number(item.discount?.toString().replace("%", "")) || 0;
+                const qty = Number(item.qty) || 1;
+
+                const finalPrice = discount > 0 ? price - (price * discount) / 100 : price;
+                const rowSubtotal = finalPrice * qty;
+                subtotal += rowSubtotal;
+                totalDiscount += (price - finalPrice) * qty;
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+          <td>${item.name}</td>
+          <td>${qty}</td>
+          <td>$${price.toFixed(2)}</td>
+          <td>${discount > 0 ? discount + "%" : "-"}</td>
+          <td>$${rowSubtotal.toFixed(2)}</td>
+        `;
+                cartBody.appendChild(tr);
+            });
+
+            const shipping = calcShipping(subtotal);
+            const finalTotal = subtotal + shipping;
+
+            totals = {
+                subtotal,
+                discount: totalDiscount,
+                shipping,
+                total: finalTotal,
+            };
+
+            summary.innerHTML = `
+        <p>Discount: <span style="color:red;">-$${totalDiscount.toFixed(2)}</span></p>
+        <p>Shipping Fee: ${shipping === 0 ? "Free" : "$" + shipping.toFixed(2)}</p>
+        <p><strong>Total: $${finalTotal.toFixed(2)}</strong></p>
+      `;
+        }
+
+        renderCheckout();
+
+        // 🆕 Generate next order ID
+        async function getNextOrderId() {
+            const counterRef = doc(db, "counters", "orders");
+            const snap = await getDoc(counterRef);
+
+            let newNumber;
+            if (snap.exists()) {
+                const current = snap.data().count || 0;
+                newNumber = current + 1;
+                await updateDoc(counterRef, { count: increment(1) });
+            } else {
+                newNumber = 1;
+                await setDoc(counterRef, { count: 1 });
+            }
+
+            return "PAWS-" + String(newNumber).padStart(6, "0");
+        }
+
+        const spin = [
+            { transform: "rotate(0deg)" },
+            { transform: "rotate(360deg)" },
+        ];
+        const spinTiming = { duration: 800, iterations: Infinity };
+
+        // === CAPTCHA SECTION ===
+        let num1, num2, correctAnswer;
+
+        function generateCaptcha() {
+            num1 = Math.floor(Math.random() * 10) + 1;
+            num2 = Math.floor(Math.random() * 10) + 1;
+            correctAnswer = num1 + num2;
+            captchaQuestion.textContent = `Captcha: ${num1} + ${num2} = ?`;
+        }
+
+        // Initialize + refresh event
+        generateCaptcha();
+        document.getElementById("refreshCaptcha").addEventListener("click", generateCaptcha);
+
+        // ✅ Place order
+        placeOrderBtn.addEventListener("click", async () => {
+            if (cart.length === 0) {
+                alert("Your cart is empty!");
+                return;
+            }
+
+            const name = document.getElementById("guestName").value.trim();
+            const email = document.getElementById("guestEmail").value.trim();
+            const phone = document.getElementById("guestPhone").value.trim();
+            const address = document.getElementById("guestAddress").value.trim();
+
+            if (!name || !email || !phone || !address) {
+                alert("⚠️ Please fill in all guest information.");
+                return;
+            }
+
+            const userAnswer = parseInt(captchaInput.value);
+            if (isNaN(userAnswer) || userAnswer !== correctAnswer) {
+                alert("❌ Incorrect Captcha! Please try again.");
+                generateCaptcha();
+                captchaInput.value = "";
+                return;
+            }
+
+            placeOrderBtn.disabled = true;
+            btnText.textContent = "Processing...";
+            loader.style.display = "inline-block";
+            loader.animate(spin, spinTiming);
+
+            try {
+                const orderId = await getNextOrderId();
+
+                const order = {
+                    orderId,
+                    items: cart,
+                    subtotal: totals.subtotal,
+                    discount: totals.discount,
+                    shipping: totals.shipping === 0 ? "Free" : totals.shipping,
+                    total: totals.total,
+                    status: "pending",
+                    createdAt: serverTimestamp(),
+                    customer: { name, email, phone, address },
+                };
+
+                await addDoc(collection(db, "Orders"), order);
+
+                // Show receipt
+                document.getElementById("checkout").style.display = "none";
+                document.getElementById("receipt").style.display = "block";
+
+                document.getElementById("rOrderId").innerText = orderId;
+                document.getElementById("rName").innerText = name;
+                document.getElementById("rEmail").innerText = email;
+                document.getElementById("rPhone").innerText = phone;
+                document.getElementById("rAddress").innerText = address;
+
+                const rItems = document.getElementById("rItems");
+                rItems.innerHTML = "";
+
+                cart.forEach((item) => {
+                    const price = Number(item.price) || 0;
+                    const discount = Number(item.discount?.toString().replace("%", "")) || 0;
+                    const finalPrice = discount > 0 ? price - (price * discount) / 100 : price;
+                    const rowSubtotal = finalPrice * item.qty;
+
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+            <td style="padding: 10px; border: 1px solid #ddd;">${item.name}</td>
+            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${item.qty}</td>
+            <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$${price.toFixed(2)}</td>
+            <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">${discount > 0 ? discount + "%" : "-"}</td>
+            <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$${rowSubtotal.toFixed(2)}</td>
+          `;
+                    rItems.appendChild(tr);
+                });
+
+                document.getElementById("rDiscount").innerText = "$" + totals.discount.toFixed(2);
+                document.getElementById("rShipping").innerText = totals.shipping === 0 ? "Free" : "$" + totals.shipping.toFixed(2);
+                document.getElementById("rTotal").innerText = "$" + totals.total.toFixed(2);
+
+                localStorage.removeItem("cart");
+
+                alert("✅ Order placed successfully!");
+            } catch (err) {
+                console.error("Error placing order:", err);
+                alert("❌ Failed to place order: " + err.message);
+            } finally {
+                placeOrderBtn.disabled = false;
+                btnText.textContent = "Place Order";
+                loader.style.display = "none";
+            }
+        });
+    </script>
+</body>
+
+</html>

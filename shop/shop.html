@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../css/style.css" />
+    <title>Happy Paws Cambodia</title>
+    <style>
+        .category-buttons {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- HEADER -->
+    <header>
+        <div class="header-container">
+            <div class="logo">Happy Paws Cambodia</div>
+
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" placeholder="Search the store" />
+                    <button>
+                        <svg style="width: 15px; height: 15px" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="hamburger" id="hamburger">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+
+        <nav>
+            <ul id="headerCategories">
+                <!-- Auto categories -->
+            </ul>
+        </nav>
+    </header>
+
+    <!-- BREADCRUMB -->
+    <nav class="breadcrumb" style="background-color: white;">
+        <a href="../homepage.html" id="homeBreadcrumb">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 9.75L12 3l9 6.75V21a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 21V9.75z" />
+            </svg>
+        </a>
+        <span class="separator">›</span>
+        <span id="breadcrumbCategory">All</span>
+
+        <!-- 🛒 Cart -->
+        <div id="cartIcon">🛒 <span id="cartCount">0</span></div>
+        <div id="cartOverlay" class="cart-overlay"></div>
+
+        <div id="cartModal" class="cart-modal">
+            <div class="cart-header">
+                <h2>Your Cart</h2>
+                <button id="closeCart" class="close-btn">✖</button>
+            </div>
+            <div id="cartItems" class="cart-items"></div>
+            <div class="cart-footer">
+                <p><b>Total:</b> $<span id="cartTotal">0.00</span></p>
+                <button id="checkoutBtn" class="checkout-btn">Checkout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- PRODUCTS -->
+    <div class="container-Product">
+        <h1>Pet Shop: Supplies & Accessories</h1>
+        <p>
+            Happy Paws Cambodia offers a wide range of food and accessories for your pets.
+        </p>
+    </div>
+
+    <div class="Product-shop-contianier">
+        <div class="controls">
+            <div id="categoryButtons" class="category-buttons">
+                <button data-category="All" class="category-btn active">All</button>
+                <button id="addAllBtn" class="add-all-btn">Add All to Cart</button>
+
+            </div>
+        </div>
+
+        <div class="Product-shop-contianier-right-side">
+            <div id="itemsList" class="loading">Loading...</div>
+        </div>
+    </div>
+
+    <!-- MODAL -->
+    <div id="itemModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- SCRIPT -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import {
+            getFirestore, collection, getDocs, doc, getDoc, updateDoc, increment
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { addToCart, updateCartCount, renderCart } from "../js/cart.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDgplNJfWpHKu_pHIROonwE6zj-4zUSetA",
+            authDomain: "ecommerce-52a65.firebaseapp.com",
+            projectId: "ecommerce-52a65",
+            storageBucket: "ecommerce-52a65.appspot.com",
+            messagingSenderId: "510866427688",
+            appId: "1:510866427688:web:f730f3ffa83fd15a390a1d",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const itemsList = document.getElementById("itemsList");
+        const categoryButtons = document.getElementById("categoryButtons");
+        const breadcrumbCategory = document.getElementById("breadcrumbCategory");
+        const headerCategories = document.getElementById("headerCategories");
+
+        const cartIcon = document.getElementById("cartIcon");
+        const cartModal = document.getElementById("cartModal");
+        const closeCart = document.getElementById("closeCart");
+        const cartOverlay = document.getElementById("cartOverlay");
+        const checkoutBtn = document.getElementById("checkoutBtn");
+
+        let categories = [];
+        let selectedType = "All"; // for filter
+        let typeOptions = new Set();
+
+        /* ========== Utility Helpers ========== */
+        function showMessage(msg) {
+            itemsList.innerHTML = `<div class="loading">${msg}</div>`;
+        }
+        function logAndShowError(msg, err) {
+            console.error(msg, err);
+            showMessage(msg + (err ? ` — ${err.message || err}` : ""));
+        }
+
+        /* ========== Load Categories ========== */
+        async function loadCategories() {
+            try {
+                const foodCollection = collection(db, "Food");
+                const snap = await getDocs(foodCollection);
+                categories = [];
+                snap.forEach((docSnap) => categories.push(docSnap.id));
+
+                if (!categories.length) {
+                    console.warn("⚠️ No categories found. Using fallback.");
+                    categories = ["Dog", "Cat"];
+                }
+
+                renderCategoryButtons();
+                renderHeaderLinks();
+            } catch (err) {
+                logAndShowError("Failed to load categories.", err);
+            }
+        }
+
+        /* ========== Render Category Buttons ========== */
+        function renderCategoryButtons() {
+            categoryButtons.innerHTML = "";
+            const allBtn = document.createElement("button");
+            allBtn.textContent = "All";
+            allBtn.className = "category-btn active";
+            allBtn.dataset.category = "All";
+            allBtn.addEventListener("click", () => handleCategoryChange("All"));
+            categoryButtons.appendChild(allBtn);
+
+            categories.forEach((cat) => {
+                const btn = document.createElement("button");
+                btn.textContent = cat;
+                btn.className = "category-btn";
+                btn.dataset.category = cat;
+                btn.addEventListener("click", () => handleCategoryChange(cat));
+                categoryButtons.appendChild(btn);
+            });
+        }
+
+        function renderHeaderLinks() {
+            headerCategories.innerHTML = "";
+            categories.forEach((cat) => {
+                const li = document.createElement("li");
+                const a = document.createElement("a");
+                a.href = "#";
+                a.textContent = cat;
+                a.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    handleCategoryChange(cat);
+                });
+                li.appendChild(a);
+                headerCategories.appendChild(li);
+            });
+        }
+
+        /* ========== Handle Category Change ========== */
+        async function handleCategoryChange(category) {
+            document.querySelectorAll(".category-btn").forEach((btn) => btn.classList.remove("active"));
+            const activeBtn = [...document.querySelectorAll(".category-btn")].find(
+                (b) => b.dataset.category === category
+            );
+            if (activeBtn) activeBtn.classList.add("active");
+
+            breadcrumbCategory.textContent = category;
+            await loadItems(category, selectedType);
+        }
+
+        /* ========== Load Items (with type filter) ========== */
+        async function loadItems(category = "All", filterType = "All") {
+            try {
+                showMessage("Loading items...");
+                const grid = document.createElement("div");
+                grid.className = "items-grid";
+                let found = false;
+                typeOptions.clear();
+
+                const categoriesToLoad = category === "All" ? categories : [category];
+
+                for (const cat of categoriesToLoad) {
+                    const snap = await getDocs(collection(db, "Food", cat, "Items"));
+                    snap.forEach((docSnap) => {
+                        const data = docSnap.data();
+                        if (!data.name) return;
+
+                        const type = data.type || "Other";
+                        typeOptions.add(type);
+
+                        // filter by selected type
+                        if (filterType !== "All" && type.toLowerCase() !== filterType.toLowerCase()) return;
+
+                        const price = parseFloat(data.price) || 0;
+                        const discount = parseFloat(data.discount) || 0;
+                        const finalPrice = discount > 0 ? (price * (1 - discount / 100)).toFixed(2) : price.toFixed(2);
+
+                        const card = document.createElement("div");
+                        card.className = "item-card";
+                        card.innerHTML = `
+          <div class="item-images">
+            <img src="${data.images?.[0] || ""}" alt="product">
+          </div>
+          <div class="item-body">
+            <div class="item-title">${data.name}</div>
+            <div class="item-meta"><span>${cat}</span> | <span>${type}</span></div>
+            <div class="item-price">
+              ${discount > 0
+                                ? `<span class="old-price">$${price.toFixed(2)}</span>
+                   <span class="new-price" style="color:green;font-weight:bold;">$${finalPrice}</span>
+                   <span class="discount-badge">-${discount}%</span>`
+                                : `<span class="no-discount">$${price.toFixed(2)}</span>`}
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="viewBtn" data-cat="${cat}" data-id="${docSnap.id}">Detail</button>
+              <button class="cartBtn" data-cat="${cat}" data-id="${docSnap.id}">
+                <img style="width: 25px; height: 25px" src="https://img.icons8.com/?size=100&id=ldYAIOBZuEdB&format=png&color=FFFFFF">
+              </button>
+            </div>
+            <div class="view-count">👁️ ${data.views || 0} views</div>
+          </div>
+        `;
+
+                        // View
+                        card.querySelector(".viewBtn").addEventListener("click", async (e) => {
+                            const id = e.target.getAttribute("data-id");
+                            const cat = e.target.getAttribute("data-cat");
+                            const ref = doc(db, "Food", cat, "Items", id);
+                            await updateDoc(ref, { views: increment(1) });
+                            window.open(`product-detail.html?id=${id}&category=${cat}`, "_blank");
+                        });
+
+                        // Add to cart
+                        card.querySelector(".cartBtn").addEventListener("click", async (e) => {
+                            const btn = e.currentTarget;
+                            btn.classList.add("loading"); // show spinner
+
+                            try {
+                                const id = btn.getAttribute("data-id");
+                                const cat = btn.getAttribute("data-cat");
+                                const ref = doc(db, "Food", cat, "Items", id);
+                                const snap = await getDoc(ref);
+                                if (!snap.exists()) return alert("Item not found.");
+
+                                const d = snap.data();
+                                const price = parseFloat(d.price) || 0;
+                                const discount = parseFloat(d.discount) || 0;
+                                const finalPrice = discount > 0 ? (price * (1 - discount / 100)).toFixed(2) : price.toFixed(2);
+
+                                await addToCart(
+                                    {
+                                        name: d.name || "—",
+                                        price,
+                                        discount,
+                                        finalPrice,
+                                        image: d.images?.[0] || "",
+                                    },
+                                    id
+                                );
+
+                                updateCartCount();
+                            } catch (err) {
+                                console.error("Add to cart failed", err);
+                                alert("Failed to add to cart.");
+                            } finally {
+                                btn.classList.remove("loading");
+                            }
+                        });
+
+                        grid.appendChild(card);
+                        found = true;
+                    });
+                }
+
+                // render type filter (after loading)
+                renderTypeFilter();
+
+                itemsList.innerHTML = found ? "" : `<div class="loading">No items found.</div>`;
+                if (found) itemsList.appendChild(grid);
+
+            } catch (err) {
+                logAndShowError("Failed to load items.", err);
+            }
+        }
+
+        /* ========== Render Type Filter Dropdown ========== */
+        function renderTypeFilter() {
+            let filterContainer = document.getElementById("typeFilterContainer");
+            if (!filterContainer) {
+                filterContainer = document.createElement("div");
+                filterContainer.id = "typeFilterContainer";
+                filterContainer.style.margin = "10px 0";
+                categoryButtons.insertAdjacentElement("afterend", filterContainer);
+            }
+
+            const select = document.createElement("select");
+            select.id = "typeFilter";
+            select.innerHTML = `<option value="All">All Types</option>`;
+            [...typeOptions].forEach((t) => {
+                const opt = document.createElement("option");
+                opt.value = t;
+                opt.textContent = t;
+                if (selectedType === t) opt.selected = true;
+                select.appendChild(opt);
+            });
+
+            select.addEventListener("change", async (e) => {
+                selectedType = e.target.value;
+                await loadItems(
+                    document.querySelector(".category-btn.active")?.dataset.category || "All",
+                    selectedType
+                );
+            });
+
+            filterContainer.innerHTML = "";
+            filterContainer.appendChild(select);
+        }
+
+        /* ========== Cart Events ========== */
+        cartIcon.addEventListener("click", () => {
+            cartModal.classList.add("open");
+            cartOverlay.classList.add("active");
+            renderCart();
+        });
+        closeCart.addEventListener("click", () => {
+            cartModal.classList.remove("open");
+            cartOverlay.classList.remove("active");
+        });
+        cartOverlay.addEventListener("click", () => {
+            cartModal.classList.remove("open");
+            cartOverlay.classList.remove("active");
+        });
+        checkoutBtn.addEventListener("click", () => alert("Proceeding to checkout..."));
+
+        /* ========== Init ========== */
+        window.addEventListener("DOMContentLoaded", async () => {
+            await loadCategories();
+            await loadItems("All", "All");
+            updateCartCount();
+        });
+    </script>
+
+
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-left">
+                <p class="footer-desc">
+                    Happy Paws Cambodia – your one-stop destination for pet food, toys, and care.
+                </p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2025 Happy Paws Cambodia. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+
+</html>
